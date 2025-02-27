@@ -118,3 +118,4 @@ if __name__ == "__main__":
     
     # FastAPI 실행 (workers=3 사용하면 Gradio가 동작하지 않음)
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
