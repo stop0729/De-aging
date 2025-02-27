@@ -1,21 +1,21 @@
 import schemas as _schemas
 
 import torch 
-from diffusers import StableDiffusionImg2ImgPipeline
+from diffusers import StableDiffusionImg2ImgPipeline,StableDiffusionPipeline
 import os
 from PIL import Image
 from io import BytesIO
 from utils import set_seed, gender
 import numpy as np
 from pkg_resources import parse_version
-
+from peft import PeftModel
 
 # Get the token from HuggingFace 
 """
 Note: make sure .env exist and contains your token
 """
-# MODEL_PATH = 'SG161222/Realistic_Vision_V6.0_B1_noVAE'
-MODEL_PATH = "/data/ephemeral/home/stable-diffusion-aging-time-lapse/models/SG161222"
+MODEL_PATH = 'SG161222/Realistic_Vision_V6.0_B1_noVAE'
+#MODEL_PATH = "/data/ephemeral/home/stable-diffusion-aging-time-lapse/models/SG161222"
 
 def create_pipeline(model_path):
     # Create the pipe 
@@ -28,9 +28,19 @@ def create_pipeline(model_path):
     #pipe = StableDiffusionImg2ImgPipeline.from_pretrained("./cached_model", use_safetensors=False)
     pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_path, use_safetensors=False)
 
+    # Load the LoRA weights
+    pipe.unet = PeftModel.from_pretrained(
+        pipe.unet,
+        "/data/ephemeral/home/output/lora_weights/",
+        adapter_name="custom_lora"
+    )
+
     # LoRA 가중치 적용
-    lora_weights = "./output/lora_weights/lora_model.safetensors"
-    pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=lora_weights, adapter_name="custom_lora")
+    #lora_weights = "./output/lora_weights/lora_model.safetensors"
+    #pipe.load_lora_weights(
+    #     pretrained_model_name_or_path_or_dict="/data/ephemeral/home/output/lora_weights/adapter_model.safetensors", 
+    #     adapter_name="my_custom_lora",
+    # )
     
     # pipe.load_lora_weights(pretrained_model_name_or_path_or_dict="weights/lora_disney.safetensors", adapter_name="disney")
 
@@ -99,6 +109,34 @@ async def generate_image(imgPrompt: _schemas.ImageCreate) -> Image:
     (cloned face:1.1), (perfect skin:1.2), (mutated hands and fingers:1.3), disconnected hands,
     disconnected limbs, amputation, (semi-realistic, cgi, 3d, render, sketch, cartoon, drawing,
     anime, doll, overexposed, photoshop, oversaturated:1.4)"""
+
+    # final_prompt_70 = """photo of a 70 years old korean male, detailed (wrinkles, blemishes, folds, moles, veins, pores, skin imperfections:1.1),
+    # highly detailed glossy eyes, specular lighting, dslr, ultra quality, sharp focus, tack sharp, dof, 
+    # film grain, centered, Fujifilm XT3, crystal clear"""
+    # final_prompt_50 = """photo of a 50 years old korean male, detailed (wrinkles, blemishes, folds, moles, veins, pores, skin imperfections:1.1),
+    # highly detailed glossy eyes, specular lighting, dslr, ultra quality, sharp focus, tack sharp, dof, 
+    # film grain, centered, Fujifilm XT3, crystal clear"""
+    # final_prompt_30 = """photo of a 30 years old korean male, detailed (wrinkles, blemishes, folds, moles, veins, pores, skin imperfections:1.1),
+    # highly detailed glossy eyes, specular lighting, dslr, ultra quality, sharp focus, tack sharp, dof, 
+    # film grain, centered, Fujifilm XT3, crystal clear"""
+    # final_prompt_10 = """photo of a 10 years old korean male, detailed (wrinkles, blemishes, folds, moles, veins, pores, skin imperfections:1.1),
+    # highly detailed glossy eyes, specular lighting, dslr, ultra quality, sharp focus, tack sharp, dof, 
+    # film grain, centered, Fujifilm XT3, crystal clear"""
+    # negative_prompt_male = """naked, nude, out of frame, tattoo, b&w, sepia,
+    # (blurry un-sharp fuzzy un-detailed skin:1.4), (twins:1.4), (geminis:1.4), (wrong eyeballs:1.1),
+    # (cloned face:1.1), (perfect skin:1.2), (mutated hands and fingers:1.3), disconnected hands,
+    # disconnected limbs, amputation, (semi-realistic, cgi, 3d, render, sketch, cartoon, drawing,
+    # anime, doll, overexposed, photoshop, oversaturated:1.4)"""
+    # negative_prompt_female = """beard, moustache, naked, nude, out of frame, tattoo, b&w, sepia,
+    # (blurry un-sharp fuzzy un-detailed skin:1.4), (twins:1.4), (geminis:1.4), (wrong eyeballs:1.1),
+    # (cloned face:1.1), (perfect skin:1.2), (mutated hands and fingers:1.3), disconnected hands,
+    # disconnected limbs, amputation, (semi-realistic, cgi, 3d, render, sketch, cartoon, drawing,
+    # anime, doll, overexposed, photoshop, oversaturated:1.4)"""
+    # negative_prompt_child = """beard, moustache, naked, nude, out of frame, tattoo, b&w, sepia,
+    # (blurry un-sharp fuzzy un-detailed skin:1.4), (twins:1.4), (geminis:1.4), (wrong eyeballs:1.1),
+    # (cloned face:1.1), (perfect skin:1.2), (mutated hands and fingers:1.3), disconnected hands,
+    # disconnected limbs, amputation, (semi-realistic, cgi, 3d, render, sketch, cartoon, drawing,
+    # anime, doll, overexposed, photoshop, oversaturated:1.4)"""
 
     # 70 years old generation
     print('Generating 70 years old...')
@@ -186,3 +224,4 @@ async def generate_image(imgPrompt: _schemas.ImageCreate) -> Image:
     
     return image_10, image_30, image_50, image_70
         
+
