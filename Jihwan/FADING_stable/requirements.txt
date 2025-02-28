@@ -1,0 +1,4 @@
+accelerate==0.28.0
+diffusers==0.27.1
+opencv-python==4.8.1.78
+transformers==4.36.2
